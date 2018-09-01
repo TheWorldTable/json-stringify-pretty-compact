@@ -1,15 +1,20 @@
 function stringify (obj, options) {
-  options = options || {}
-  var indent = JSON.stringify([1], null, get(options, 'indent', 2)).slice(2, -3)
-  var addMargin = get(options, 'margins', false)
-  var maxLength = (indent === '' ? Infinity : get(options, 'maxLength', 80))
+  options = options || {};
+  var indent = JSON.stringify([1], null, get(options, 'indent', 2)).slice(2, -3);
+  var addMargin = get(options, 'margins', false);
+  var maxLength = (indent === '' ? Infinity : get(options, 'maxLength', 80));
+
+  var truncate = options.truncate ? (typeof options.truncate === 'number' ? options.truncate : maxLength) : false
+  var replacer = truncate ? function (k, v) {
+    return typeof v === 'string' && v.length > truncate ? `${v.substr(0, truncate - 1)}…` : v;
+  } : null;
 
   return (function _stringify (obj, currentIndent, reserved) {
     if (obj && typeof obj.toJSON === 'function') {
       obj = obj.toJSON()
     }
 
-    var string = JSON.stringify(obj)
+    var string = JSON.stringify(obj, replacer)
 
     if (string === undefined) {
       return string
@@ -35,7 +40,7 @@ function stringify (obj, options) {
       if (Array.isArray(obj)) {
         for (var index = 0; index < obj.length; index++) {
           items.push(
-            _stringify(obj[index], nextIndent, comma(obj, index)) || 'null'
+              _stringify(obj[index], nextIndent, comma(obj, index)) || 'null'
           )
         }
         delimiters = '[]'
@@ -43,7 +48,7 @@ function stringify (obj, options) {
         Object.keys(obj).forEach(function (key, index, array) {
           var keyPart = JSON.stringify(key) + ': '
           var value = _stringify(obj[key], nextIndent,
-                                 keyPart.length + comma(array, index))
+              keyPart.length + comma(array, index))
           if (value !== undefined) {
             items.push(keyPart + value)
           }
